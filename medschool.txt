@@ -1,0 +1,137 @@
+# Import basic libraries
+from math import *
+import pandas as pd
+import numpy as np
+from IPython.core.display import display, HTML
+display(HTML("<style>.container { width:90% !important; }</style>"))
+schools=pd.read_csv('https://raw.githubusercontent.com/ohiostate82/PreMedSTAR/master/School_Scores.csv')
+schools.head(20)
+
+# STUDENT SCORE FUNCTION
+def student_score():
+    MCAT = int(input('Enter your MCAT Score: '))
+    while MCAT < 472  or MCAT > 528:
+        print("\nThat score is invalid. Please enter a valid MCAT score.")
+        MCAT = int(input('Enter your MCAT Score: '))
+        
+    GPA = float(input('Enter your cumulative undergraduate GPA (4.0 Scale): '))
+    while GPA > float(4.0) or GPA < 0:
+        print("\nInvalid GPA. Please enter a valid GPA.")
+        GPA = float(input('Enter your GPA: '))
+        
+    Work_Exp_Cnt = int(input('Enter your Total Number of Work Experience (Maximum of 3): '))
+    while Work_Exp_Cnt < 0 or Work_Exp_Cnt > 3:
+        print("\nMaximum number of Work Experience is 3.")
+        Work_Exp_Cnt = int(input('Enter your Total Number of Work Experience (Maximum of 3): '))
+                 
+    Actv_Cnt = int(input('Enter your Total Number of Extracurricular Activities (Maximum of 3): '))
+    while Actv_Cnt < 0 or Actv_Cnt > 3:
+        print("\nMaximum number of Extracurricular Activities is 3.")
+        Actv_Cnt = int(input('Enter your Total Number of Extracurricular Activities (Maximum of 3): '))
+        
+    Pub_Cnt = int(input('Enter your Total Number of Publications (Maximum of 3): '))
+    while Pub_Cnt < 0 or Pub_Cnt > 3:
+        print("\nMaximum number of Publications is 3.")
+        Pub_Cnt = int(input('Enter your Total Number of Publications (Maximum of 3): '))
+        
+    Clin_Exp_Cnt = int(input('Enter your Total Number of Clinical Experience Jobs (Maximum of 3): '))
+    while Clin_Exp_Cnt < 0 or Clin_Exp_Cnt > 3:
+        print("\nMaximum number of Clinical Experience is 3.")
+        Clin_Exp_Cnt = int(input('Enter your Total Number of Clinical Experience Jobs (Maximum of 3): '))
+        
+    Club_Cnt = int(input('Enter your Total Number of Clubs (Maximum of 3): '))
+    while Club_Cnt < 0 or Club_Cnt > 3:
+        print("\nMaximum number of Clubs is 3.")
+        Club_Cnt = int(input('Enter your Total Number of Clubs (Maximum of 3): '))
+        
+    Clin_Exp_Hrs = int(input('Enter your Total Number of Clinical Experience Hours (Maximum of 1000): '))
+    while Clin_Exp_Hrs < 0 or Clin_Exp_Hrs > 1000:
+        print("\nMaximum number of CLinical Experience Hours is 1000.")
+        Clin_Exp_Hrs = int(input('Enter your Total Number of Clinical Experience Hours (Maximum of 1000): '))
+    
+    # CALCULATE LOG VALUE OF MCAT * GPA
+    Log_MCAT_GPA = log10(MCAT*GPA)
+    
+    # GROUP CLINICAL EXPERIENCE IN 1-3 SEGMENTS BASED ON NUMBER OF HOURS
+    if Clin_Exp_Hrs <= 250:
+        Clin_Exp_Hrs_Cat = 1
+    elif Clin_Exp_Hrs <= 750:
+        Clin_Exp_Hrs_Cat = 2
+    elif Clin_Exp_Hrs <= 1000:
+        Clin_Exp_Hrs_Cat = 3
+        
+    # CALCULATE FINAL SCORE
+    final_score = ((Log_MCAT_GPA * 0.85) + (Work_Exp_Cnt * 0.025) + (Actv_Cnt * 0.025) + (Pub_Cnt * 0.025) + (Clin_Exp_Cnt * 0.025)
+    + (Club_Cnt * 0.025) + (Clin_Exp_Hrs_Cat * 0.025)) / 1
+    
+    print(final_score)
+        
+    
+    # IMPORT SCHOOL SCORES DATA
+    schools=pd.read_csv('https://raw.githubusercontent.com/ohiostate82/PreMedSTAR/master/School_Scores.csv')
+    
+    # CALCULATE STANDARD DEVIATION FOR OPTIMAL RANGE AND DIVIDE BY 3.5 TO REDUCE INTERVAL WIDTH
+    stdev_opt = schools['WTD_Score'].std() / 3.5
+    
+    # MULTIPLY OPTIMAL STANDARD DEVIATION BY 2.5 TO INCREASE RANGE FOR CONSERVATIVE AND AGGRESSIVE RANGES
+    stdev_cons_agg = stdev_opt*3
+    
+    # MULTIPLY OPTIMAL STANDARD DEVIATION BY 3.5 TO INCREASE RANGE FOR VERY CONSERVATIVE AND VERY AGGRESSIVE RANGES
+    stdev_vcons_vagg = stdev_opt*4
+    
+    # CALCULATE OPTIMAL SCHOOLS
+    Low_Opt = final_score - stdev_opt
+    High_Opt = final_score + stdev_opt
+    
+    # CALCULATE CONSERVATIVE SCHOOLS
+    Low_Cons = Low_Opt - stdev_cons_agg
+    High_Cons = Low_Opt
+    
+    # CALCULATE VERY CONSERVATIVE SCHOOLS
+    Low_Vcons = Low_Cons - stdev_vcons_vagg
+    High_Vcons = Low_Cons
+    
+    # CALCULATE AGGRESSIVE SCHOOLS
+    Low_Agg = High_Opt
+    High_Agg = High_Opt + stdev_cons_agg
+    
+    # CALCULATE VERY AGGRESSIVE SCHOOLS
+    Low_Vagg = High_Agg
+    High_Vagg = High_Agg + stdev_vcons_vagg
+    
+    print('\n')
+        
+    print('VERY CONSERVATIVE')
+    print("The following schools' admittance criteria is significantly lower than your score:")
+    for vc in schools[(schools['WTD_Score'] < High_Vcons)]['School'].values:
+        print(vc)
+    
+    print('\n')
+    
+    print('CONSERVATIVE')
+    print("The following schools' admittance criteria is slightly lower than your score:")
+    for c in schools[(schools['WTD_Score'] >= Low_Cons) & (schools['WTD_Score'] < High_Cons)]['School'].values:
+        print(c)
+    
+    print('\n')
+    
+    print('OPTIMAL')
+    print("The following schools' admittance criteria is within your score:")
+    for o in schools[(schools['WTD_Score'] >= Low_Opt) & (schools['WTD_Score'] < High_Opt)]['School'].values:
+        print(o)
+    
+    print('\n')
+    
+    print('AGGRESSIVE')
+    print("The following schools' admittance criteria is slightly higher than your score:")
+    for a in schools[(schools['WTD_Score'] >= Low_Agg) & (schools['WTD_Score'] < High_Agg)]['School'].values:
+        print(a)
+    
+    print('\n')
+    
+    print('VERY AGGRESSIVE')
+    print("The following schools' admittance criteria is significantly higher than your score:")
+    for va in schools[(schools['WTD_Score'] >= Low_Vagg)]['School'].values:
+        print(va)
+        
+student_score()
